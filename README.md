@@ -1,7 +1,7 @@
 ## Web Scrapping and EPUB format conversion workflow with N8N
 
 ## Input:
-
+Enter the blog URL into the chat.
 ```
 https://blog-website-url.com/
 ```
