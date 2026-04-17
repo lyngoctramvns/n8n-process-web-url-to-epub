@@ -3,7 +3,14 @@
 ## Input:
 
 ```
+Website URL:
 https://blog-website-url.com/
+
+Start Chapter:
+Chapter which we begin to extract
+
+End Chapter:
+Chapter which we stop extracting
 ```
 ## Pipeline process
 
