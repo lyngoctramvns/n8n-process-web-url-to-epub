@@ -1,0 +1,989 @@
+{
+  "name": "Job CV & CL Generation",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "11QuNpXqG2rDgHymoTJzdkMJNlODedwV7NJ1gWzekTy0",
+          "mode": "list",
+          "cachedResultName": "Companies Tracking",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11QuNpXqG2rDgHymoTJzdkMJNlODedwV7NJ1gWzekTy0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "1681095453",
+          "mode": "id"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -192,
+        -128
+      ],
+      "id": "d0a773dd-55e5-486a-bccd-02f2be896a82",
+      "name": "Job URL list",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "O1Vu05JS68NJBUgk",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "CV & CL production form",
+        "formDescription": "Enter details to generate CV suggestions and cover letters for the job.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Start Row Job URL"
+            },
+            {
+              "fieldLabel": "End Row Job URL"
+            },
+            {
+              "fieldLabel": "At which column within the document are your company links reside?"
+            },
+            {
+              "fieldLabel": "Upload CV File - PDF only",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf"
+            },
+            {
+              "fieldLabel": "Which cover letter template do you want to use?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Cover Letter 1"
+                  },
+                  {
+                    "option": "Cover Letter 2"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -400,
+        -96
+      ],
+      "id": "fe30d880-e4b7-43e4-8afb-16cb4bf2a1cb",
+      "name": "On form submission",
+      "webhookId": "f6d74d02-7e41-4329-9421-326465d21c40"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fcf51616-dbd5-4edc-882e-72215296f99f",
+              "leftValue": "={{ $('On form submission').first().json['Which cover letter template do you want to use?'] }}",
+              "rightValue": "=Cover Letter 1",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        336,
+        240
+      ],
+      "id": "844df2df-9c6e-499e-8f52-c7b913a55971",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        144,
+        64
+      ],
+      "id": "0fa6c26e-7b52-476a-a025-360c247c4d7d",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "const columnName = $('On form submission').first().json['At which column within the document are your company links reside?']\n\nconst startRow = $('On form submission').first().json['Start Row Job URL']\n\nconst endRow = $('On form submission').first().json['End Row Job URL']\n\nconst allData = $input.all()\n\nconst getRowInRange = allData.slice(startRow - 2, endRow - 1)\n\nconst result = getRowInRange.map(item => ({\n  json: {\n    site_applied: item.json[`${columnName}`]\n  }\n}));\n\nreturn result\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        -64
+      ],
+      "id": "c469ce43-7c4e-48f6-91eb-c191101101c2",
+      "name": "Filter Site Applied According To Row Name"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        288
+      ],
+      "id": "a06fa453-c932-488a-8a78-678e09572487",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TwMPlblxXF3Ovkt7",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "arcee-ai/trinity-large-preview:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        848,
+        112
+      ],
+      "id": "da91927d-1493-47d5-a045-868ce62aacdd",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "5v4YAiSahfI3L9Qf",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.site_applied }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "user-Agent",
+              "value": "Mozilla/5.0 (Window NT 10.0;Win64;x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "en-US,en;q=0.9"
+            },
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        336,
+        -32
+      ],
+      "id": "98b4b1af-43f7-4ea6-9a46-8e413a4c99ad",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "body",
+              "cssSelector": "html"
+            }
+          ]
+        },
+        "options": {
+          "cleanUpText": true
+        }
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        496,
+        -64
+      ],
+      "id": "04c103c3-b5a1-433f-8a99-6b7050b059d8",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "if ($input.item.json.body) {\n  $input.item.json.content = $input.item.json.body\n\n    // Remove <style>, <script>, and other head-like content blocks\n    .replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '')\n    .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n    .replace(/<noscript[^>]*>[\\s\\S]*?<\\/noscript>/gi, '')\n    .replace(/<!--[\\s\\S]*?-->/g, '') // HTML comments\n\n    // Remove common non-content elements\n    .replace(/<nav[^>]*>[\\s\\S]*?<\\/nav>/gi, '')\n    .replace(/<header[^>]*>[\\s\\S]*?<\\/header>/gi, '')\n    .replace(/<footer[^>]*>[\\s\\S]*?<\\/footer>/gi, '')\n    .replace(/<aside[^>]*>[\\s\\S]*?<\\/aside>/gi, '')\n\n    // Convert common HTML entities before removing tags\n    .replace(/&nbsp;/g, ' ')\n    .replace(/&amp;/g, '&')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/&mdash;/g, '-')\n    .replace(/&ndash;/g, '-')\n\n    // Remove all HTML tags but preserve line breaks for paragraphs\n    .replace(/<\\/?(p|div|br|h[1-6])[^>]*>/gi, '\\n')\n    .replace(/<[^>]+>/g, '')\n\n    // Remove CSS or JS snippets\n    .replace(/(?:\\.[\\w-]+|#[\\w-]+)\\s*\\{[^}]*\\}/g, '') // CSS rules\n    .replace(/\\b(function\\s*\\([^)]*\\)\\s*\\{[\\s\\S]*?\\})\\b/g, '') // JS functions\n    .replace(/\\bvar\\s+[\\w$]+\\s*=\\s*[^;]+;/g, '') // Variable declarations\n\n    // Remove UI junk and boilerplate phrases\n    .replace(/\\b(Subscribe|Newsletter|Book a (call|meeting)|Leave a Reply|Cancel Reply|Login|Logout|Sign\\s?up|Sign\\s?in|Your Name|Email Address|Website|Privacy Policy|Terms (of Service|& Conditions)|Close Menu|Skip to (main )?content|Back to top|Search|Menu|Share|Tweet|Pin|Read More|Continue Reading|Related Posts?|Tags?:|Categories?:)\\b/gi, '')\n\n    // Remove social and footer keywords\n    .replace(/\\b(Facebook|Twitter|LinkedIn|Instagram|YouTube|TikTok|© \\d{4} [\\w\\s.]+|All Rights Reserved)\\b/gi, '')\n\n    // Remove navigation and pagination text\n    .replace(/\\b(Next|Previous Page \\d+( of \\d+)?|Home|About|Contact|Blog)\\b/gi, '')\n\n    // Remove common Medium-specific elements\n    .replace(/\\b(clap|responses?|follow|member-only story|this story is published in|get the medium app)\\b/gi, '')\n\n    // Clean up whitespace and formatting\n    .replace(/\\r?\\n/g, ' ')      // Remove all newlines first\n    .replace(/\\s{2,}/g, ' ')     // Collapse multiple spaces\n    .replace(/\\s+([.,!?])/g, '$1') // Remove space before punctuation\n    .trim();                    // Trim leading/trailing whitespace\n\n  // Optional: Set a minimum content length filter\n  if ($input.item.json.content.length < 50) {\n    $input.item.json.content = \"Content too short or unable to extract meaningful text\";\n  }\n\n  // Optional: Add word count\n  $input.item.json.wordCount = $input.item.json.content\n    .split(/\\s+/)\n    .filter(word => word.length > 0).length;\n}\n\nreturn $input.item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        -80
+      ],
+      "id": "a8f8f035-5864-4a47-95c1-3f889e0a4484",
+      "name": "Clean HTML"
+    },
+    {
+      "parameters": {
+        "model": "arcee-ai/trinity-large-preview:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        560
+      ],
+      "id": "96c0815b-9b05-4992-ba4b-a551e36a3fb3",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "5v4YAiSahfI3L9Qf",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Act as a professional Recruitment Consultant and HTML Developer.\n\n### INPUT DATA:\n- Job Description: {{ $json.output }}\n- My CV Content: {{ $json.text }}\n- Template Structure: {{ $json.content }}\n\n### TASK:\nGenerate a highly tailored cover letter based on the Job Description and my CV. The output must be in HTML format.\n\n### HTML & STYLING RULES:\n1. Return ONLY raw HTML code. Do NOT include conversational text or Markdown backticks (no ```html).\n2. Replace ALL placeholders (like [Company Name] or [Date]) with actual data from the inputs. \n3. Use INLINE CSS for all styling to ensure Google Doc compatibility.\n4. Use a clean, professional layout:\n   - Font: Arial, size 11pt.\n   - Spacing: 1.0 line spacing.\n   - Margins: Wrap the content in a <div> with 40px padding.\n5. Use standard HTML tags: <b> for bolding, <br> for spacing, and <p> for paragraphs.\n\n### CONTENT RULES:\n- Tailor the letter specifically to the Job Description provided.\n- Ensure the tone is professional, confident, and enthusiastic.\n- Use the provided Template Structure ({{ $json.content }}) but overwrite all example/dummy text with real details.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1392,
+        352
+      ],
+      "id": "c87c3256-60ef-4dc7-93a1-a9c36ba543d3",
+      "name": "Cover Letter Generation"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Given the HTML content {{ $json.content }}, search for the job description within the site.\nRemove any unnecessary chat replies, and only output the job description content.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        848,
+        -48
+      ],
+      "id": "9e962d04-e13c-40cc-a7c2-45c83f133c8d",
+      "name": "Get JD from URL"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1184,
+        272
+      ],
+      "id": "f1d3c156-7834-4fc6-bad2-39581c03764b",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1152,
+        -176
+      ],
+      "id": "5b1fe953-9292-46a9-8ec3-2146ec0821f7",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Upload_CV_File___PDF_only",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        -304
+      ],
+      "id": "9363379e-f501-4c45-8759-99591d035589",
+      "name": "Get CV Content from PDF"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Act as an expert career consultant and HTML developer.\n\n### INPUT DATA:\n1. Job Description: {{ $json.output }}\n2. Current CV Content: {{ $json.text }}\n\n### TASK:\nGenerate detailed suggestions for changes in my CV to fit with the Job Description using my CV content. The output must be in valid HTML format designed for a clean conversion to a Google Document.\n\n### CONSTRAINTS (STRICT):\n- Return ONLY the raw HTML code.\n- NO conversational filler (e.g., \"Sure, here is your CV...\").\n- NO Markdown code blocks (DO NOT use ```html or ```).\n- Use standard HTML tags (<table>, <div>, <span>, <b>) that Google Docs can easily parse.\n- Ensure all CSS is inline within the HTML tags.\n- Making clear what the changes needed to be.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1344,
+        -112
+      ],
+      "id": "8ae2a624-a8ef-4673-bf74-bf23cb514f1f",
+      "name": "CV Adjustments Generation"
+    },
+    {
+      "parameters": {
+        "model": "arcee-ai/trinity-large-preview:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        64
+      ],
+      "id": "074c566f-e1e3-4096-b675-8a0273595c79",
+      "name": "OpenRouter Chat Model2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "5v4YAiSahfI3L9Qf",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1491a2bb-f0bd-41ea-9537-e6f64134260c",
+              "name": "document_name",
+              "value": "={{\"CV adjusted - \" + ($itemIndex + 1) }}",
+              "type": "string"
+            },
+            {
+              "id": "aad58fe6-9e2d-4629-9647-6719a4a9f980",
+              "name": "html_content",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b5a48e-8838-474a-817f-6320a2b77e2a",
+              "name": "drive_folder_id",
+              "value": "16hR0UZlbzG-s-VmxLqXCFK4E3350rX-I",
+              "type": "string"
+            },
+            {
+              "id": "baf3e5a4-2369-4ec1-b130-90f634392507",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1648,
+        -96
+      ],
+      "id": "3df1a2d9-fcef-48ed-8e9c-47d2940a9693",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const boundary = 'divider';\nconst docName = $input.first().json.document_name;\nconst folderId = $input.first().json.drive_folder_id;\nconst htmlContent = $input.first().json.html_content;\n\nconst metadata = JSON.stringify({\n  name: docName,\n  mimeType: \"application/vnd.google-apps.document\",\n  parents: [folderId]\n});\n\nconst htmlWithStyles = `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    /* Add bottom margin to block elements for spacing */\n    p,\n    ul,\n    ol,\n    table,\n    h1,\n    h2,\n    h3,\n    h4,\n    h5,\n    h6 {\n      margin-bottom: 10pt;\n    }\n\n    h2 {\n      margin-top: 20pt;\n    }\n\n    /* Prevent margin collapse issues or excessive space inside lists */\n    li {\n       margin-bottom: 2pt; /* Optional: small space between list items */\n    }\n\n    /* Remove margin from the last child within common containers if needed */\n    /* This might be overly aggressive, test without it first */\n    /*\n    body > *:last-child,\n    li > *:last-child {\n       margin-bottom: 0;\n    }\n    */\n  </style>\n</head>\n<body>\n  ${htmlContent}\n</body>\n</html>\n`;\n\n// Construct the body with literal \\r\\n ONLY\nlet body = `--${boundary}\\r\\n`;\nbody += `Content-Type: application/json; charset=UTF-8\\r\\n`;\nbody += `\\r\\n`; // Blank line\nbody += `${metadata}\\r\\n`;\nbody += `--${boundary}\\r\\n`;\nbody += `Content-Type: text/html\\r\\n`;\nbody += `\\r\\n`; // Blank line\nbody += `${htmlWithStyles}\\r\\n`; // Add the HTML content\nbody += `--${boundary}--\\r\\n`; // Final boundary\n\nreturn {\n  rawData: body \n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1856,
+        -96
+      ],
+      "id": "51793bf5-cdd1-42e7-b2e7-172c82cfa14f",
+      "name": "prepare-request1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1491a2bb-f0bd-41ea-9537-e6f64134260c",
+              "name": "document_name",
+              "value": "=Cover letter - {{ $itemIndex + 1 }}",
+              "type": "string"
+            },
+            {
+              "id": "aad58fe6-9e2d-4629-9647-6719a4a9f980",
+              "name": "html_content",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "a1b5a48e-8838-474a-817f-6320a2b77e2a",
+              "name": "drive_folder_id",
+              "value": "16hR0UZlbzG-s-VmxLqXCFK4E3350rX-I",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1680,
+        416
+      ],
+      "id": "d728e03b-0a6d-48cf-8648-c1dac3d88a75",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const boundary = 'divider';\nconst docName = $input.first().json.document_name;\nconst folderId = $input.first().json.drive_folder_id;\nconst htmlContent = $input.first().json.html_content;\n\nconst metadata = JSON.stringify({\n  name: docName,\n  mimeType: \"application/vnd.google-apps.document\",\n  parents: [folderId]\n});\n\nconst htmlWithStyles = `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    /* Add bottom margin to block elements for spacing */\n    p,\n    ul,\n    ol,\n    table,\n    h1,\n    h2,\n    h3,\n    h4,\n    h5,\n    h6 {\n      margin-bottom: 10pt;\n    }\n\n    h2 {\n      margin-top: 20pt;\n    }\n\n    /* Prevent margin collapse issues or excessive space inside lists */\n    li {\n       margin-bottom: 2pt; /* Optional: small space between list items */\n    }\n\n    /* Remove margin from the last child within common containers if needed */\n    /* This might be overly aggressive, test without it first */\n    /*\n    body > *:last-child,\n    li > *:last-child {\n       margin-bottom: 0;\n    }\n    */\n  </style>\n</head>\n<body>\n  ${htmlContent}\n</body>\n</html>\n`;\n\n// Construct the body with literal \\r\\n ONLY\nlet body = `--${boundary}\\r\\n`;\nbody += `Content-Type: application/json; charset=UTF-8\\r\\n`;\nbody += `\\r\\n`; // Blank line\nbody += `${metadata}\\r\\n`;\nbody += `--${boundary}\\r\\n`;\nbody += `Content-Type: text/html\\r\\n`;\nbody += `\\r\\n`; // Blank line\nbody += `${htmlWithStyles}\\r\\n`; // Add the HTML content\nbody += `--${boundary}--\\r\\n`; // Final boundary\n\nreturn {\n  rawData: body \n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        416
+      ],
+      "id": "dd34e31e-f23d-4a4c-8054-3cebaf1ff151",
+      "name": "prepare-request"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2256,
+        48
+      ],
+      "id": "164a4924-89f9-4722-8bc9-c6a73b2ec51f",
+      "name": "Wait",
+      "webhookId": "254c6369-84e2-4159-9de4-6323cd8f6ef8"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2224,
+        480
+      ],
+      "id": "f2f91221-90d0-47e1-a5c8-4c7bb8c6abc0",
+      "name": "Wait1",
+      "webhookId": "f15016e3-a1ac-40fc-863a-3d0df870c4b2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "uploadType",
+              "value": "multipart"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "multipart/related; boundary=divider",
+        "body": "={{ $json.rawData }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2048,
+        48
+      ],
+      "id": "393e7456-6283-4abd-987c-a8d4975f5e24",
+      "name": "Post to GDrive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YReuXJul4tbHHo7G",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "uploadType",
+              "value": "multipart"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "multipart/related; boundary=divider",
+        "body": "={{ $json.rawData }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2016,
+        480
+      ],
+      "id": "42b09f8a-2ec6-45c9-b71d-1b9f15fd69af",
+      "name": "Post to GDrive1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YReuXJul4tbHHo7G",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "1OA4farh_F0psOPi0ESQyshj53gEmjYbwsOrUqTzGHs4"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        560,
+        240
+      ],
+      "id": "1dfb0045-a6b5-4576-b3dd-d76b8a38f6ed",
+      "name": "Cover Letter 1",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "ix2iC8unieQzB14h",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "1pHPoSvULapVoy26D2Gm5mNfPVo0w5GKr9MTvbVVyRLE"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        560,
+        432
+      ],
+      "id": "f66af36f-cc72-4615-a37f-4b20c1149a63",
+      "name": "Cover Letter 2",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "ix2iC8unieQzB14h",
+          "name": "Google Docs account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Job URL list",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get CV Content from PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Cover Letter 1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cover Letter 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job URL list": {
+      "main": [
+        [
+          {
+            "node": "Filter Site Applied According To Row Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Site Applied According To Row Name": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Get JD from URL",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Clean HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean HTML": {
+      "main": [
+        [
+          {
+            "node": "Get JD from URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Cover Letter Generation",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get JD from URL": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Cover Letter Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "CV Adjustments Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get CV Content from PDF": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CV Adjustments Generation",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "prepare-request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "prepare-request1": {
+      "main": [
+        [
+          {
+            "node": "Post to GDrive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CV Adjustments Generation": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "prepare-request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "prepare-request": {
+      "main": [
+        [
+          {
+            "node": "Post to GDrive1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cover Letter Generation": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to GDrive": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to GDrive1": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cover Letter 1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Cover Letter 2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "46d98ac7-5cc5-4c8e-bcec-55495691d357",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "923c31deb1914c6ce41d43eeb7bdc3bf67f60e7dbd855cf34763766fae42113f"
+  },
+  "id": "Qeieo3K5M7MSsnBg",
+  "tags": []
+}

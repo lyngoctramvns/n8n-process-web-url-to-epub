@@ -23,8 +23,33 @@ Chapter which we stop extracting
 
 6. Update into Google Docs the styled content, ready to be converted to EPUB form
 
-![Process](<Convert Website to Epub.png>)
+![Process](</website-to-epub/Convert Website to Epub.png>)
 
 ## Result:
-![Result](image.png)
+![Result](</website-to-epub/image.png>)
+
+## CV and Cover Letter Adjustment using n8n
+
+### Input:
+
+1. Job urls extracted from job listing file
+2. Your CV
+3. Cover Letter Templapte
+
+### Process
+
+![Process](</CL-CV/Process.png>)
+
+1. Extract the URL from the excel column from Google Sheet file
+
+Separate into 3 branches:
+* Exract HTML content from URLs and using AI Agent to filter the specific job description
+* Get cover letter template
+* Get CV content
+
+2. Combine the CV content, cover letter template and job description, parse through AI agents => generate new cover letters and CV alteration suggestion to fit with the applying job.
+
+### Result:
+
+How it works in real life: [Demonstation Video](https://youtu.be/iOw7xoih4Bo)
 
