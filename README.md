@@ -1,6 +1,6 @@
-## Web Scrapping and EPUB format conversion workflow with N8N
+## Project 1: Web Scrapping and EPUB format conversion workflow with N8N
 
-## Input:
+### Input:
 ```
 Website URL:
 https://blog-website-url.com/
@@ -11,7 +11,7 @@ Chapter which we begin to extract
 End Chapter:
 Chapter which we stop extracting
 ```
-## Pipeline process
+### Pipeline process
 
 1. First, the process get the HTML content from website from HTTP request
 
@@ -25,10 +25,10 @@ Chapter which we stop extracting
 
 ![Process](</website-to-epub/Convert Website to Epub.png>)
 
-## Result:
+### Result:
 ![Result](</website-to-epub/image.png>)
 
-## CV and Cover Letter Adjustment using n8n
+## Project 2: CV and Cover Letter Adjustment using n8n
 
 ### Input:
 
